@@ -15,6 +15,7 @@ import aImage from './assets/images.jpeg';
 export default function App() {
   const [isTfReady, setIsTfReady] = useState(false);
   const [isModelReady, setIsModelReady] = useState(false);
+  const [isCustomModelReady, setIsCustomModelReady] = useState(false);
   const [model, setModel] = useState(null);
   const [predictions, setPredictions] = useState(null);
   const [image, setImage] = useState(aImage);
@@ -27,8 +28,16 @@ export default function App() {
       try {
         setModel(await MobileNet.load());
         setIsModelReady(true);
+        console.log('.....')
+        // console.log('NAT_MODEL', NAT_MODEL);
+        const URL = 'https://tfhub.dev/google/tfjs-model/inaturalist/inception_v3/feature_vector/1/default/1';
+        const mdl = await TF.loadGraphModel(URL, {fromTFHub: true});
+        // const mdl = await TF.loadGraphModel(NAT_MODEL);
+        console.log('model', mdl);
+        setModel(mdl);
+        setIsCustomModelReady(true);
       } catch(err) {
-        console.log('err', err);
+        console.log('err:::', err);
       }
     }
     const getPermissionAsync = async () => {
@@ -54,6 +63,11 @@ export default function App() {
           <View style={styles.loadingModelContainer}>
             <Text style={styles.text}>Model ready? </Text>
             {isModelReady ? (
+              <Text style={styles.text}>✅</Text>
+            ) : (
+              <ActivityIndicator size='small' />
+            )}
+            {isCustomModelReady ? (
               <Text style={styles.text}>✅</Text>
             ) : (
               <ActivityIndicator size='small' />
