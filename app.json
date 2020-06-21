@@ -22,11 +22,13 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "test.rn-tensorflow"
     },
     "android": {
       "package": "arman.rn_tfjs",
       "versionCode": 1
-    }
+    },
+    "entryPoint": "node_modules/expo/AppEntry.js"
   }
 }

@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator, StatusBar, Button } from 'react-native';
 import * as TF from '@tensorflow/tfjs';
-import * as MobileNet from '@tensorflow-models/mobilenet';
 import {fetch} from '@tensorflow/tfjs-react-native';
 import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
@@ -14,7 +13,6 @@ import aImage from './assets/images.jpeg';
 
 export default function App() {
   const [isTfReady, setIsTfReady] = useState(false);
-  const [isModelReady, setIsModelReady] = useState(false);
   const [isCustomModelReady, setIsCustomModelReady] = useState(false);
   const [model, setModel] = useState(null);
   const [predictions, setPredictions] = useState(null);
@@ -26,14 +24,10 @@ export default function App() {
       await TF.ready();
       setIsTfReady(true);
       try {
-        setModel(await MobileNet.load());
-        setIsModelReady(true);
-        console.log('.....')
-        // console.log('NAT_MODEL', NAT_MODEL);
-        const URL = 'https://tfhub.dev/google/tfjs-model/inaturalist/inception_v3/feature_vector/1/default/1';
+        const URL = 'https://tfhub.dev/google/tfjs-model/inaturalist/inception_v3/feature_vector/3/default/1';
         const mdl = await TF.loadGraphModel(URL, {fromTFHub: true});
         // const mdl = await TF.loadGraphModel(NAT_MODEL);
-        console.log('model', mdl);
+        console.log('model', typeof mdl);
         setModel(mdl);
         setIsCustomModelReady(true);
       } catch(err) {
@@ -62,13 +56,8 @@ export default function App() {
 
           <View style={styles.loadingModelContainer}>
             <Text style={styles.text}>Model ready? </Text>
-            {isModelReady ? (
-              <Text style={styles.text}>✅</Text>
-            ) : (
-              <ActivityIndicator size='small' />
-            )}
             {isCustomModelReady ? (
-              <Text style={styles.text}>✅</Text>
+              <Text style={styles.text}>(✅)</Text>
             ) : (
               <ActivityIndicator size='small' />
             )}
@@ -76,16 +65,16 @@ export default function App() {
         </View>
         <TouchableOpacity
           style={styles.imageWrapper}
-          onPress={isModelReady ? selectImage : undefined}>
+          onPress={isCustomModelReady ? selectImage : undefined}>
           {image && <Image source={image} style={styles.imageContainer} />}
 
-          {isModelReady && !image && (
+          {isCustomModelReady && !image && (
             <Text style={styles.transparentText}>Tap to choose image</Text>
           )}
         </TouchableOpacity>
-        <Button onPress={classifyImage} title="Identify!" color="#841584" disabled={!isModelReady} />
+        <Button onPress={classifyImage} title="Identify!" color="#841584" disabled={!isCustomModelReady} />
         <View style={styles.predictionWrapper}>
-          {isModelReady &&
+          {isCustomModelReady &&
             predictions &&
           predictions.map(({className, probability}) => <Text style={styles.text} key={className}>{className}: {probability}</Text>)}
         </View>
@@ -106,8 +95,7 @@ export default function App() {
 
       offset += 4;
     }
-
-    return TF.tensor3d(buffer, [height, width, 3]);
+    return TF.zeros([buffer, height, width, 3]);
   }
 
   async function classifyImage() {
@@ -122,8 +110,10 @@ export default function App() {
         rawImageData = stringToUint8Array(base64Img);
       }
       const imageTensor = imageToTensor(rawImageData);
-      const predictions = await model.classify(imageTensor);
-      setPredictions(predictions);
+      const zeros = TF.zeros([1, 224, 224, 3]);
+
+      model.predict(zeros).print();
+      // setPredictions(predictions);
     } catch (error) {
       console.log(error);
       setError('CLASSIFY ERROR: ' + error.message);
